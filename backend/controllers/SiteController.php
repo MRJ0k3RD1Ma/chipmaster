@@ -6,7 +6,7 @@ use common\models\LoginForm;
 use Yii;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
-use yii\web\Controller;
+use yii\rest\Controller;
 use yii\web\Response;
 
 /**

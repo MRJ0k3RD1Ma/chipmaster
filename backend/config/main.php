@@ -16,6 +16,19 @@ return [
     'components' => [
         'request' => [
             'csrfParam' => '_csrf-backend',
+            'parsers' => [
+                'application/json' => 'yii\web\JsonParser',
+            ],
+            'baseUrl'=>'/api'
+        ],
+        'response' => [
+            'formatters' => [
+                \yii\web\Response::FORMAT_JSON => [
+                    'class' => 'yii\web\JsonResponseFormatter',
+                    'prettyPrint' => YII_DEBUG,
+                    'encodeOptions' => JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+                ],
+            ],
         ],
         'user' => [
             'identityClass' => 'common\models\User',
@@ -38,14 +51,22 @@ return [
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],
-        /*
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
+                ''=>'site/index',
+                'POST v1/admin-auth/login' => 'v1/admin-auth/login',
+                'POST v1/admin-auth/refresh' => 'v1/admin-auth/refresh',
+                'POST v1/admin-auth/logout' => 'v1/admin-auth/logout',
+                'GET v1/admin-auth/me' => 'v1/admin-auth/me',
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
+                    'controller' => ['v1/admin-role', 'v1/admin'],
+                ],
             ],
         ],
-        */
     ],
     'params' => $params,
 ];
