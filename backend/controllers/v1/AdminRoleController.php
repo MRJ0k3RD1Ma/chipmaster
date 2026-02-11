@@ -42,7 +42,6 @@ class AdminRoleController extends BaseController
             ];
         }
 
-
     }
 
     // PUT /v1/admin-role/{id}
@@ -65,8 +64,8 @@ class AdminRoleController extends BaseController
     public function actionDelete($id)
     {
         $model = $this->findModel($id);
-
-        if ($model->delete()) {
+        $model->status = 0;
+        if ($model->save()) {
             Yii::$app->response->statusCode = 204;
             return null;
         }
