@@ -2,31 +2,61 @@
 
 namespace backend\controllers\v1;
 
-use common\models\Brand;
+use common\models\Category;
 use yii\web\NotFoundHttpException;
 use yii\web\UploadedFile;
 use Yii;
 
-class BrandController extends BaseController
+class CategoryController extends BaseController
 {
-    // GET /v1/brand
+    // GET /v1/category
     public function actionIndex()
     {
-        return Brand::find()->all();
+        return Category::find()
+            ->where(['status' => Category::STATUS_ACTIVE])
+            ->orderBy(['sort_order' => SORT_ASC])
+            ->all();
     }
 
-    // GET /v1/brand/{id}
+    // GET /v1/category/tree - daraxt ko'rinishda
+    public function actionTree()
+    {
+        $categories = Category::find()
+            ->where(['status' => Category::STATUS_ACTIVE])
+            ->orderBy(['sort_order' => SORT_ASC])
+            ->asArray()
+            ->all();
+
+        return $this->buildTree($categories);
+    }
+
+    private function buildTree(array $categories, $parentId = null)
+    {
+        $tree = [];
+        foreach ($categories as $category) {
+            if ($category['parent_id'] == $parentId) {
+                $children = $this->buildTree($categories, $category['id']);
+                if ($children) {
+                    $category['children'] = $children;
+                }
+                $tree[] = $category;
+            }
+        }
+        return $tree;
+    }
+
+    // GET /v1/category/{id}
     public function actionView($id)
     {
         return $this->findModel($id);
     }
 
-    // POST /v1/brand
+    // POST /v1/category
     public function actionCreate()
     {
-        $model = new Brand();
+        $model = new Category();
         $model->load(Yii::$app->request->post(), '');
-        $model->logoFile = UploadedFile::getInstanceByName('logoFile');
+        $model->imageFile = UploadedFile::getInstanceByName('imageFile');
 
         if (!$model->validate()) {
             Yii::$app->response->statusCode = 400;
@@ -36,7 +66,7 @@ class BrandController extends BaseController
             ];
         }
 
-        if (!$model->uploadLogo()) {
+        if (!$model->uploadImage()) {
             Yii::$app->response->statusCode = 400;
             return [
                 'success' => false,
@@ -55,13 +85,12 @@ class BrandController extends BaseController
         ];
     }
 
-    // PUT/POST /v1/brand/{id}
+    // PUT/POST /v1/category/{id}
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
         $model->load(Yii::$app->request->post(), '');
-
-        $model->logoFile = UploadedFile::getInstanceByName('logoFile');
+        $model->imageFile = UploadedFile::getInstanceByName('imageFile');
 
         if (!$model->validate()) {
             Yii::$app->response->statusCode = 400;
@@ -71,7 +100,7 @@ class BrandController extends BaseController
             ];
         }
 
-        if (!$model->uploadLogo()) {
+        if (!$model->uploadImage()) {
             Yii::$app->response->statusCode = 400;
             return [
                 'success' => false,
@@ -89,11 +118,12 @@ class BrandController extends BaseController
         ];
     }
 
-    // DELETE /v1/brand/{id}
+    // DELETE /v1/category/{id}
     public function actionDelete($id)
     {
         $model = $this->findModel($id);
-        $model->status = 0;
+        $model->status = Category::STATUS_INACTIVE;
+
         if ($model->save(false)) {
             Yii::$app->response->statusCode = 204;
             return null;
@@ -107,10 +137,10 @@ class BrandController extends BaseController
 
     protected function findModel($id)
     {
-        $model = Brand::findOne($id);
+        $model = Category::findOne($id);
 
         if ($model === null) {
-            throw new NotFoundHttpException("Brand topilmadi: $id");
+            throw new NotFoundHttpException("Kategoriya topilmadi: $id");
         }
 
         return $model;

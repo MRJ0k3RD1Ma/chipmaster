@@ -65,6 +65,14 @@ return [
                     'pluralize' => false,
                     'controller' => ['v1/admin-role', 'v1/admin', 'v1/brand'],
                 ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
+                    'controller' => ['v1/category'],
+                    'extraPatterns' => [
+                        'GET tree' => 'tree',
+                    ],
+                ],
             ],
         ],
     ],
