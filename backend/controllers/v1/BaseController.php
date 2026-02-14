@@ -24,12 +24,6 @@ class BaseController extends Controller
 
         $behaviors['cors'] = [
             'class' => Cors::class,
-            'cors' => [
-                'Origin' => ['*'],
-                'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-                'Access-Control-Request-Headers' => ['*'],
-                'Access-Control-Allow-Credentials' => true,
-            ],
         ];
 
         return $behaviors;
@@ -41,10 +35,15 @@ class BaseController extends Controller
             return false;
         }
 
+        // OPTIONS so'rovi uchun autentifikatsiya talab qilinmaydi
+        if (Yii::$app->request->method === 'OPTIONS') {
+            Yii::$app->response->statusCode = 200;
+            return null;
+        }
+
         $this->admin = $this->authenticate();
         return true;
     }
-
     protected function authenticate()
     {
         $authHeader = Yii::$app->request->headers->get('Authorization');

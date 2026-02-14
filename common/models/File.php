@@ -5,30 +5,27 @@ namespace common\models;
 use Yii;
 use yii\db\ActiveRecord;
 use yii\behaviors\TimestampBehavior;
-use yii\behaviors\SluggableBehavior;
 use yii\db\Expression;
 
 /**
- * Brand model
+ * File model
  *
  * @property int $id
  * @property string $name
- * @property string $slug
- * @property int $logo_id
+ * @property string $exts
+ * @property string $url
  * @property int $status
  * @property string $created
  * @property string $updated
- *
- * @property File $logo
  */
-class Brand extends ActiveRecord
+class File extends ActiveRecord
 {
     const STATUS_INACTIVE = 0;
     const STATUS_ACTIVE = 1;
 
     public static function tableName()
     {
-        return '{{%brand}}';
+        return '{{%files}}';
     }
 
     public function behaviors()
@@ -40,27 +37,17 @@ class Brand extends ActiveRecord
                 'updatedAtAttribute' => 'updated',
                 'value' => new Expression('NOW()'),
             ],
-            [
-                'class' => SluggableBehavior::class,
-                'attribute' => 'name',
-                'slugAttribute' => 'slug',
-                'ensureUnique' => true,
-                'immutable' => false,
-            ],
         ];
     }
 
     public function rules()
     {
         return [
-            ['name', 'required'],
-            ['name', 'string', 'max' => 50],
-            ['slug', 'string', 'max' => 255],
-            ['slug', 'unique'],
-            [['logo_id', 'status'], 'integer'],
+            [['name', 'url'], 'required'],
+            [['name', 'exts', 'url'], 'string', 'max' => 255],
+            [['status'], 'integer'],
             ['status', 'default', 'value' => self::STATUS_ACTIVE],
             ['status', 'in', 'range' => [self::STATUS_INACTIVE, self::STATUS_ACTIVE]],
-            ['logo_id', 'exist', 'skipOnError' => true, 'targetClass' => File::class, 'targetAttribute' => ['logo_id' => 'id']],
         ];
     }
 
@@ -68,9 +55,9 @@ class Brand extends ActiveRecord
     {
         return [
             'id' => 'ID',
-            'name' => 'Nomi',
-            'slug' => 'Slug',
-            'logo_id' => 'Logo',
+            'name' => 'Fayl nomi',
+            'exts' => 'Kengaytma',
+            'url' => 'URL',
             'status' => 'Status',
             'created' => 'Yaratilgan',
             'updated' => 'Yangilangan',
@@ -81,7 +68,7 @@ class Brand extends ActiveRecord
     {
         $fields = parent::fields();
 
-        unset($fields['created'], $fields['updated'], $fields['logo_id']);
+        unset($fields['created'], $fields['updated']);
         $fields['created_at'] = 'created';
         $fields['updated_at'] = 'updated';
 
@@ -89,18 +76,48 @@ class Brand extends ActiveRecord
             return $this->status == self::STATUS_ACTIVE ? 'ACTIVE' : 'INACTIVE';
         };
 
-        $fields['logo'] = function () {
-            return $this->logo;
+        // URL ni JSON formatdan decode qilish
+        $fields['url'] = function () {
+            $decoded = json_decode($this->url, true);
+            return $decoded ?: $this->url;
         };
 
         return $fields;
     }
 
     /**
-     * Logo file relation
+     * Rasm URL larini olish
      */
-    public function getLogo()
+    public function getUrls()
     {
-        return $this->hasOne(File::class, ['id' => 'logo_id']);
+        $decoded = json_decode($this->url, true);
+        return $decoded ?: ['original' => $this->url];
+    }
+
+    /**
+     * Original URL
+     */
+    public function getOriginalUrl()
+    {
+        $urls = $this->getUrls();
+        return $urls['original'] ?? $this->url;
+    }
+
+    /**
+     * Medium URL
+     */
+    public function getMediumUrl()
+    {
+        $urls = $this->getUrls();
+        return $urls['medium'] ?? $this->getOriginalUrl();
+    }
+
+    /**
+     * Small URL
+     */
+    public function getSmallUrl()
+    {
+        $urls = $this->getUrls();
+        return $urls['small'] ?? $this->getOriginalUrl();
     }
 }

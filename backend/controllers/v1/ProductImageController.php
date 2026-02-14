@@ -2,28 +2,23 @@
 
 namespace backend\controllers\v1;
 
-use common\models\Category;
+use common\models\ProductImage;
 use yii\web\NotFoundHttpException;
 use Yii;
 
-class CategoryController extends BaseController
+class ProductImageController extends BaseController
 {
-    // GET /v1/category
+    // GET /v1/product-image
     public function actionIndex()
     {
         $request = Yii::$app->request;
         $perPage = (int)$request->get('per_page', 20);
 
-        $query = Category::find();
+        $query = ProductImage::find();
 
-        // Search by name
-        if ($name = $request->get('name')) {
-            $query->andFilterWhere(['like', 'name', $name]);
-        }
-
-        // Filter by parent_id
-        if (($parentId = $request->get('parent_id')) !== null) {
-            $query->andFilterWhere(['parent_id' => $parentId]);
+        // Filter by product
+        if ($productId = $request->get('product_id')) {
+            $query->andFilterWhere(['product_id' => $productId]);
         }
 
         // Filter by status
@@ -31,15 +26,31 @@ class CategoryController extends BaseController
             $query->andFilterWhere(['status' => $status]);
         }
 
-        // Global search
-        if ($search = $request->get('search')) {
-            $query->andWhere(['like', 'name', $search]);
+        // Filter by is_primary
+        if (($isPrimary = $request->get('is_primary')) !== null) {
+            $query->andFilterWhere(['is_primary' => $isPrimary]);
+        }
+
+        // Expand relations
+        if ($expand = $request->get('expand')) {
+            $expandFields = array_map('trim', explode(',', $expand));
+            $with = [];
+            if (in_array('product', $expandFields)) {
+                $with[] = 'product';
+            }
+            if (in_array('image', $expandFields)) {
+                $with[] = 'image';
+            }
+            if (!empty($with)) {
+                $query->with($with);
+            }
         }
 
         $provider = new \yii\data\ActiveDataProvider([
             'query' => $query,
             'sort' => [
                 'defaultOrder' => ['sort_order' => SORT_ASC],
+                'attributes' => ['id', 'sort_order', 'is_primary', 'created'],
             ],
             'pagination' => [
                 'pageSize' => $perPage,
@@ -66,43 +77,16 @@ class CategoryController extends BaseController
         ];
     }
 
-    // GET /v1/category/tree - daraxt ko'rinishda
-    public function actionTree()
-    {
-        $categories = Category::find()
-            ->where(['status' => Category::STATUS_ACTIVE])
-            ->orderBy(['sort_order' => SORT_ASC])
-            ->asArray()
-            ->all();
-
-        return $this->buildTree($categories);
-    }
-
-    private function buildTree(array $categories, $parentId = null)
-    {
-        $tree = [];
-        foreach ($categories as $category) {
-            if ($category['parent_id'] == $parentId) {
-                $children = $this->buildTree($categories, $category['id']);
-                if ($children) {
-                    $category['children'] = $children;
-                }
-                $tree[] = $category;
-            }
-        }
-        return $tree;
-    }
-
-    // GET /v1/category/{id}
+    // GET /v1/product-image/{id}
     public function actionView($id)
     {
         return $this->findModel($id);
     }
 
-    // POST /v1/category
+    // POST /v1/product-image
     public function actionCreate()
     {
-        $model = new Category();
+        $model = new ProductImage();
         $model->load(Yii::$app->request->post(), '');
 
         if ($model->save()) {
@@ -117,7 +101,7 @@ class CategoryController extends BaseController
         ];
     }
 
-    // PUT/POST /v1/category/{id}
+    // PUT/POST /v1/product-image/{id}
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
@@ -134,11 +118,28 @@ class CategoryController extends BaseController
         ];
     }
 
-    // DELETE /v1/category/{id}
+    // PUT /v1/product-image/{id}/set-primary
+    public function actionSetPrimary($id)
+    {
+        $model = $this->findModel($id);
+        $model->is_primary = ProductImage::IS_PRIMARY_YES;
+
+        if ($model->save()) {
+            return $model;
+        }
+
+        Yii::$app->response->statusCode = 400;
+        return [
+            'success' => false,
+            'errors' => $model->errors,
+        ];
+    }
+
+    // DELETE /v1/product-image/{id}
     public function actionDelete($id)
     {
         $model = $this->findModel($id);
-        $model->status = Category::STATUS_INACTIVE;
+        $model->status = ProductImage::STATUS_INACTIVE;
 
         if ($model->save(false)) {
             Yii::$app->response->statusCode = 204;
@@ -153,10 +154,10 @@ class CategoryController extends BaseController
 
     protected function findModel($id)
     {
-        $model = Category::findOne($id);
+        $model = ProductImage::findOne($id);
 
         if ($model === null) {
-            throw new NotFoundHttpException("Kategoriya topilmadi: $id");
+            throw new NotFoundHttpException("Rasm topilmadi: $id");
         }
 
         return $model;

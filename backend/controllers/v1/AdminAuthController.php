@@ -28,17 +28,23 @@ class AdminAuthController extends Controller
 
         $behaviors['cors'] = [
             'class' => Cors::class,
-            'cors' => [
-                'Origin' => ['*'],
-                'Access-Control-Request-Method' => ['GET', 'POST', 'OPTIONS'],
-                'Access-Control-Request-Headers' => ['*'],
-                'Access-Control-Allow-Credentials' => true,
-            ],
         ];
 
         return $behaviors;
     }
 
+    public function beforeAction($action)
+    {
+        if (!parent::beforeAction($action)) {
+            return false;
+        }
+        // OPTIONS so'rovi uchun autentifikatsiya talab qilinmaydi
+        if (Yii::$app->request->method === 'OPTIONS') {
+            Yii::$app->response->statusCode = 200;
+            return null;
+        }
+        return true;
+    }
     // POST /v1/admin-auth/login
     public function actionLogin()
     {

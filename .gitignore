@@ -44,3 +44,12 @@ phpunit.phar
 /backend/web/index.php
 /backend/web/index-test.php
 /backend/web/robots.txt
+
+# Upload folders
+frontend/web/upload/files/*
+frontend/web/upload/brand/*
+frontend/web/upload/category/*
+!frontend/web/upload/files/.gitkeep
+!frontend/web/upload/brand/.gitkeep
+!frontend/web/upload/category/.gitkeep
+

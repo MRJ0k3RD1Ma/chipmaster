@@ -5,37 +5,35 @@ namespace common\models;
 use Yii;
 use yii\db\ActiveRecord;
 use yii\behaviors\TimestampBehavior;
-use yii\behaviors\SluggableBehavior;
 use yii\db\Expression;
 
 /**
- * Category model
+ * ProductImage model
  *
  * @property int $id
- * @property int $parent_id
- * @property string $name_uz
- * @property string $name_ru
- * @property string $slug
- * @property string $icon
+ * @property int $product_id
  * @property int $image_id
- * @property string $spec_template
+ * @property string $alt_text
  * @property int $sort_order
- * @property int $status
+ * @property int $is_primary
  * @property string $created
  * @property string $updated
+ * @property int $status
  *
+ * @property Product $product
  * @property File $image
- * @property Category $parent
- * @property Category[] $children
  */
-class Category extends ActiveRecord
+class ProductImage extends ActiveRecord
 {
     const STATUS_INACTIVE = 0;
     const STATUS_ACTIVE = 1;
 
+    const IS_PRIMARY_NO = 0;
+    const IS_PRIMARY_YES = 1;
+
     public static function tableName()
     {
-        return '{{%category}}';
+        return '{{%product_image}}';
     }
 
     public function behaviors()
@@ -47,26 +45,21 @@ class Category extends ActiveRecord
                 'updatedAtAttribute' => 'updated',
                 'value' => new Expression('NOW()'),
             ],
-            [
-                'class' => SluggableBehavior::class,
-                'attribute' => 'name_uz',
-                'slugAttribute' => 'slug',
-                'ensureUnique' => true,
-                'immutable' => false,
-            ],
         ];
     }
 
     public function rules()
     {
         return [
-            [['name_uz', 'name_ru'], 'required'],
-            [['name_uz', 'name_ru', 'slug', 'icon'], 'string', 'max' => 255],
-            [['parent_id', 'sort_order', 'status', 'image_id'], 'integer'],
+            [['product_id', 'image_id'], 'required'],
+            [['product_id', 'image_id', 'sort_order', 'is_primary', 'status'], 'integer'],
+            [['alt_text'], 'string', 'max' => 255],
             ['status', 'default', 'value' => self::STATUS_ACTIVE],
             ['sort_order', 'default', 'value' => 0],
+            ['is_primary', 'default', 'value' => self::IS_PRIMARY_NO],
             ['status', 'in', 'range' => [self::STATUS_INACTIVE, self::STATUS_ACTIVE]],
-            ['spec_template', 'safe'],
+            ['is_primary', 'in', 'range' => [self::IS_PRIMARY_NO, self::IS_PRIMARY_YES]],
+            ['product_id', 'exist', 'skipOnError' => true, 'targetClass' => Product::class, 'targetAttribute' => ['product_id' => 'id']],
             ['image_id', 'exist', 'skipOnError' => true, 'targetClass' => File::class, 'targetAttribute' => ['image_id' => 'id']],
         ];
     }
@@ -75,14 +68,11 @@ class Category extends ActiveRecord
     {
         return [
             'id' => 'ID',
-            'parent_id' => 'Ota kategoriya',
-            'name_uz' => 'Nomi (UZ)',
-            'name_ru' => 'Nomi (RU)',
-            'slug' => 'Slug',
-            'icon' => 'Icon',
+            'product_id' => 'Mahsulot',
             'image_id' => 'Rasm',
-            'spec_template' => 'Spetsifikatsiya shabloni',
+            'alt_text' => 'Alt matn',
             'sort_order' => 'Tartib',
+            'is_primary' => 'Asosiy rasm',
             'status' => 'Status',
             'created' => 'Yaratilgan',
             'updated' => 'Yangilangan',
@@ -101,8 +91,8 @@ class Category extends ActiveRecord
             return $this->status == self::STATUS_ACTIVE ? 'ACTIVE' : 'INACTIVE';
         };
 
-        $fields['spec_template'] = function () {
-            return $this->spec_template ? json_decode($this->spec_template, true) : null;
+        $fields['is_primary'] = function () {
+            return (bool)$this->is_primary;
         };
 
         return $fields;
@@ -110,17 +100,12 @@ class Category extends ActiveRecord
 
     public function extraFields()
     {
-        return ['parent', 'children', 'image'];
+        return ['product', 'image'];
     }
 
-    public function getParent()
+    public function getProduct()
     {
-        return $this->hasOne(Category::class, ['id' => 'parent_id']);
-    }
-
-    public function getChildren()
-    {
-        return $this->hasMany(Category::class, ['parent_id' => 'id']);
+        return $this->hasOne(Product::class, ['id' => 'product_id']);
     }
 
     public function getImage()
@@ -128,15 +113,22 @@ class Category extends ActiveRecord
         return $this->hasOne(File::class, ['id' => 'image_id']);
     }
 
-    public function beforeSave($insert)
+    public function afterSave($insert, $changedAttributes)
     {
-        if (parent::beforeSave($insert)) {
-            // spec_template JSON formatda saqlash
-            if (is_array($this->spec_template)) {
-                $this->spec_template = json_encode($this->spec_template, JSON_UNESCAPED_UNICODE);
-            }
-            return true;
+        parent::afterSave($insert, $changedAttributes);
+
+        if ($this->is_primary == self::IS_PRIMARY_YES) {
+            // Boshqa rasmlarni is_primary=0 qilish
+            self::updateAll(
+                ['is_primary' => self::IS_PRIMARY_NO],
+                ['and', ['product_id' => $this->product_id], ['!=', 'id', $this->id]]
+            );
+
+            // Mahsulotning image_id sini yangilash
+            Product::updateAll(
+                ['image_id' => $this->image_id],
+                ['id' => $this->product_id]
+            );
         }
-        return false;
     }
 }

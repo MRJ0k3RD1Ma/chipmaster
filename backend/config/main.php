@@ -63,7 +63,7 @@ return [
                 [
                     'class' => 'yii\rest\UrlRule',
                     'pluralize' => false,
-                    'controller' => ['v1/admin-role', 'v1/admin', 'v1/brand'],
+                    'controller' => ['v1/admin-role', 'v1/admin', 'v1/brand', 'v1/product', 'v1/product-guide'],
                 ],
                 [
                     'class' => 'yii\rest\UrlRule',
@@ -71,6 +71,24 @@ return [
                     'controller' => ['v1/category'],
                     'extraPatterns' => [
                         'GET tree' => 'tree',
+                    ],
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
+                    'controller' => ['v1/product-image'],
+                    'extraPatterns' => [
+                        'PUT <id:\d+>/set-primary' => 'set-primary',
+                        'POST <id:\d+>/set-primary' => 'set-primary',
+                    ],
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
+                    'controller' => ['v1/file'],
+                    'extraPatterns' => [
+                        'POST upload' => 'upload',
+                        'POST cancel' => 'cancel',
                     ],
                 ],
             ],

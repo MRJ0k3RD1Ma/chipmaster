@@ -2,28 +2,23 @@
 
 namespace backend\controllers\v1;
 
-use common\models\Category;
+use common\models\ProductGuide;
 use yii\web\NotFoundHttpException;
 use Yii;
 
-class CategoryController extends BaseController
+class ProductGuideController extends BaseController
 {
-    // GET /v1/category
+    // GET /v1/product-guide
     public function actionIndex()
     {
         $request = Yii::$app->request;
         $perPage = (int)$request->get('per_page', 20);
 
-        $query = Category::find();
+        $query = ProductGuide::find();
 
-        // Search by name
-        if ($name = $request->get('name')) {
-            $query->andFilterWhere(['like', 'name', $name]);
-        }
-
-        // Filter by parent_id
-        if (($parentId = $request->get('parent_id')) !== null) {
-            $query->andFilterWhere(['parent_id' => $parentId]);
+        // Filter by product
+        if ($productId = $request->get('product_id')) {
+            $query->andFilterWhere(['product_id' => $productId]);
         }
 
         // Filter by status
@@ -31,15 +26,40 @@ class CategoryController extends BaseController
             $query->andFilterWhere(['status' => $status]);
         }
 
+        // Filter by has_video
+        if (($hasVideo = $request->get('has_video')) !== null) {
+            $query->andFilterWhere(['has_video' => $hasVideo]);
+        }
+
         // Global search
         if ($search = $request->get('search')) {
-            $query->andWhere(['like', 'name', $search]);
+            $query->andWhere([
+                'or',
+                ['like', 'title_uz', $search],
+                ['like', 'title_ru', $search],
+            ]);
+        }
+
+        // Expand relations
+        if ($expand = $request->get('expand')) {
+            $expandFields = array_map('trim', explode(',', $expand));
+            $with = [];
+            if (in_array('product', $expandFields)) {
+                $with[] = 'product';
+            }
+            if (in_array('video', $expandFields)) {
+                $with[] = 'video';
+            }
+            if (!empty($with)) {
+                $query->with($with);
+            }
         }
 
         $provider = new \yii\data\ActiveDataProvider([
             'query' => $query,
             'sort' => [
                 'defaultOrder' => ['sort_order' => SORT_ASC],
+                'attributes' => ['id', 'title_uz', 'sort_order', 'created'],
             ],
             'pagination' => [
                 'pageSize' => $perPage,
@@ -66,43 +86,16 @@ class CategoryController extends BaseController
         ];
     }
 
-    // GET /v1/category/tree - daraxt ko'rinishda
-    public function actionTree()
-    {
-        $categories = Category::find()
-            ->where(['status' => Category::STATUS_ACTIVE])
-            ->orderBy(['sort_order' => SORT_ASC])
-            ->asArray()
-            ->all();
-
-        return $this->buildTree($categories);
-    }
-
-    private function buildTree(array $categories, $parentId = null)
-    {
-        $tree = [];
-        foreach ($categories as $category) {
-            if ($category['parent_id'] == $parentId) {
-                $children = $this->buildTree($categories, $category['id']);
-                if ($children) {
-                    $category['children'] = $children;
-                }
-                $tree[] = $category;
-            }
-        }
-        return $tree;
-    }
-
-    // GET /v1/category/{id}
+    // GET /v1/product-guide/{id}
     public function actionView($id)
     {
         return $this->findModel($id);
     }
 
-    // POST /v1/category
+    // POST /v1/product-guide
     public function actionCreate()
     {
-        $model = new Category();
+        $model = new ProductGuide();
         $model->load(Yii::$app->request->post(), '');
 
         if ($model->save()) {
@@ -117,7 +110,7 @@ class CategoryController extends BaseController
         ];
     }
 
-    // PUT/POST /v1/category/{id}
+    // PUT/POST /v1/product-guide/{id}
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
@@ -134,11 +127,11 @@ class CategoryController extends BaseController
         ];
     }
 
-    // DELETE /v1/category/{id}
+    // DELETE /v1/product-guide/{id}
     public function actionDelete($id)
     {
         $model = $this->findModel($id);
-        $model->status = Category::STATUS_INACTIVE;
+        $model->status = ProductGuide::STATUS_INACTIVE;
 
         if ($model->save(false)) {
             Yii::$app->response->statusCode = 204;
@@ -153,10 +146,10 @@ class CategoryController extends BaseController
 
     protected function findModel($id)
     {
-        $model = Category::findOne($id);
+        $model = ProductGuide::findOne($id);
 
         if ($model === null) {
-            throw new NotFoundHttpException("Kategoriya topilmadi: $id");
+            throw new NotFoundHttpException("Qo'llanma topilmadi: $id");
         }
 
         return $model;

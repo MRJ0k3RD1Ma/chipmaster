@@ -9,33 +9,36 @@ use yii\behaviors\SluggableBehavior;
 use yii\db\Expression;
 
 /**
- * Category model
+ * ProductGuide model
  *
  * @property int $id
- * @property int $parent_id
- * @property string $name_uz
- * @property string $name_ru
- * @property string $slug
- * @property string $icon
- * @property int $image_id
- * @property string $spec_template
+ * @property int $product_id
+ * @property int $has_video
+ * @property string $title_uz
+ * @property string $title_ru
+ * @property string $content_uz
+ * @property string $content_ru
+ * @property int $video_id
  * @property int $sort_order
  * @property int $status
  * @property string $created
  * @property string $updated
+ * @property string $slug
  *
- * @property File $image
- * @property Category $parent
- * @property Category[] $children
+ * @property Product $product
+ * @property File $video
  */
-class Category extends ActiveRecord
+class ProductGuide extends ActiveRecord
 {
     const STATUS_INACTIVE = 0;
     const STATUS_ACTIVE = 1;
 
+    const HAS_VIDEO_NO = 0;
+    const HAS_VIDEO_YES = 1;
+
     public static function tableName()
     {
-        return '{{%category}}';
+        return '{{%product_guides}}';
     }
 
     public function behaviors()
@@ -49,7 +52,7 @@ class Category extends ActiveRecord
             ],
             [
                 'class' => SluggableBehavior::class,
-                'attribute' => 'name_uz',
+                'attribute' => 'title_uz',
                 'slugAttribute' => 'slug',
                 'ensureUnique' => true,
                 'immutable' => false,
@@ -60,14 +63,17 @@ class Category extends ActiveRecord
     public function rules()
     {
         return [
-            [['name_uz', 'name_ru'], 'required'],
-            [['name_uz', 'name_ru', 'slug', 'icon'], 'string', 'max' => 255],
-            [['parent_id', 'sort_order', 'status', 'image_id'], 'integer'],
+            [['product_id', 'title_uz', 'title_ru'], 'required'],
+            [['title_uz', 'title_ru', 'slug'], 'string', 'max' => 255],
+            [['content_uz', 'content_ru'], 'string'],
+            [['product_id', 'has_video', 'video_id', 'sort_order', 'status'], 'integer'],
+            ['has_video', 'default', 'value' => self::HAS_VIDEO_YES],
             ['status', 'default', 'value' => self::STATUS_ACTIVE],
             ['sort_order', 'default', 'value' => 0],
             ['status', 'in', 'range' => [self::STATUS_INACTIVE, self::STATUS_ACTIVE]],
-            ['spec_template', 'safe'],
-            ['image_id', 'exist', 'skipOnError' => true, 'targetClass' => File::class, 'targetAttribute' => ['image_id' => 'id']],
+            ['has_video', 'in', 'range' => [self::HAS_VIDEO_NO, self::HAS_VIDEO_YES]],
+            ['product_id', 'exist', 'skipOnError' => true, 'targetClass' => Product::class, 'targetAttribute' => ['product_id' => 'id']],
+            ['video_id', 'exist', 'skipOnError' => true, 'targetClass' => File::class, 'targetAttribute' => ['video_id' => 'id']],
         ];
     }
 
@@ -75,15 +81,16 @@ class Category extends ActiveRecord
     {
         return [
             'id' => 'ID',
-            'parent_id' => 'Ota kategoriya',
-            'name_uz' => 'Nomi (UZ)',
-            'name_ru' => 'Nomi (RU)',
-            'slug' => 'Slug',
-            'icon' => 'Icon',
-            'image_id' => 'Rasm',
-            'spec_template' => 'Spetsifikatsiya shabloni',
+            'product_id' => 'Mahsulot',
+            'has_video' => 'Video mavjud',
+            'title_uz' => 'Sarlavha (UZ)',
+            'title_ru' => 'Sarlavha (RU)',
+            'content_uz' => 'Matn (UZ)',
+            'content_ru' => 'Matn (RU)',
+            'video_id' => 'Video',
             'sort_order' => 'Tartib',
             'status' => 'Status',
+            'slug' => 'Slug',
             'created' => 'Yaratilgan',
             'updated' => 'Yangilangan',
         ];
@@ -101,8 +108,8 @@ class Category extends ActiveRecord
             return $this->status == self::STATUS_ACTIVE ? 'ACTIVE' : 'INACTIVE';
         };
 
-        $fields['spec_template'] = function () {
-            return $this->spec_template ? json_decode($this->spec_template, true) : null;
+        $fields['has_video'] = function () {
+            return (bool)$this->has_video;
         };
 
         return $fields;
@@ -110,33 +117,16 @@ class Category extends ActiveRecord
 
     public function extraFields()
     {
-        return ['parent', 'children', 'image'];
+        return ['product', 'video'];
     }
 
-    public function getParent()
+    public function getProduct()
     {
-        return $this->hasOne(Category::class, ['id' => 'parent_id']);
+        return $this->hasOne(Product::class, ['id' => 'product_id']);
     }
 
-    public function getChildren()
+    public function getVideo()
     {
-        return $this->hasMany(Category::class, ['parent_id' => 'id']);
-    }
-
-    public function getImage()
-    {
-        return $this->hasOne(File::class, ['id' => 'image_id']);
-    }
-
-    public function beforeSave($insert)
-    {
-        if (parent::beforeSave($insert)) {
-            // spec_template JSON formatda saqlash
-            if (is_array($this->spec_template)) {
-                $this->spec_template = json_encode($this->spec_template, JSON_UNESCAPED_UNICODE);
-            }
-            return true;
-        }
-        return false;
+        return $this->hasOne(File::class, ['id' => 'video_id']);
     }
 }

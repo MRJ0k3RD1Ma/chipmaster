@@ -2,28 +2,28 @@
 
 namespace backend\controllers\v1;
 
-use common\models\Category;
+use common\models\Product;
 use yii\web\NotFoundHttpException;
 use Yii;
 
-class CategoryController extends BaseController
+class ProductController extends BaseController
 {
-    // GET /v1/category
+    // GET /v1/product
     public function actionIndex()
     {
         $request = Yii::$app->request;
         $perPage = (int)$request->get('per_page', 20);
 
-        $query = Category::find();
+        $query = Product::find();
 
-        // Search by name
-        if ($name = $request->get('name')) {
-            $query->andFilterWhere(['like', 'name', $name]);
+        // Filter by category
+        if ($categoryId = $request->get('category_id')) {
+            $query->andFilterWhere(['category_id' => $categoryId]);
         }
 
-        // Filter by parent_id
-        if (($parentId = $request->get('parent_id')) !== null) {
-            $query->andFilterWhere(['parent_id' => $parentId]);
+        // Filter by brand
+        if ($brandId = $request->get('brand_id')) {
+            $query->andFilterWhere(['brand_id' => $brandId]);
         }
 
         // Filter by status
@@ -31,15 +31,68 @@ class CategoryController extends BaseController
             $query->andFilterWhere(['status' => $status]);
         }
 
+        // Filter by featured
+        if (($featured = $request->get('featured')) !== null) {
+            $query->andFilterWhere(['featured' => $featured]);
+        }
+
+        // Filter by is_device
+        if (($isDevice = $request->get('is_device')) !== null) {
+            $query->andFilterWhere(['is_device' => $isDevice]);
+        }
+
+        // Filter by price range
+        if ($minPrice = $request->get('min_price')) {
+            $query->andWhere(['>=', 'price', (int)$minPrice]);
+        }
+        if ($maxPrice = $request->get('max_price')) {
+            $query->andWhere(['<=', 'price', (int)$maxPrice]);
+        }
+
+        // Filter in stock
+        if ($request->get('in_stock')) {
+            $query->andWhere(['>', 'stock_quantity', 0]);
+        }
+
         // Global search
         if ($search = $request->get('search')) {
-            $query->andWhere(['like', 'name', $search]);
+            $query->andWhere([
+                'or',
+                ['like', 'name_uz', $search],
+                ['like', 'name_ru', $search],
+                ['like', 'sku', $search],
+            ]);
+        }
+
+        // Expand relations
+        if ($expand = $request->get('expand')) {
+            $expandFields = array_map('trim', explode(',', $expand));
+            $with = [];
+            if (in_array('category', $expandFields)) {
+                $with[] = 'category';
+            }
+            if (in_array('brand', $expandFields)) {
+                $with[] = 'brand';
+            }
+            if (in_array('image', $expandFields)) {
+                $with[] = 'image';
+            }
+            if (in_array('images', $expandFields)) {
+                $with[] = 'images';
+            }
+            if (in_array('guides', $expandFields)) {
+                $with[] = 'guides';
+            }
+            if (!empty($with)) {
+                $query->with($with);
+            }
         }
 
         $provider = new \yii\data\ActiveDataProvider([
             'query' => $query,
             'sort' => [
-                'defaultOrder' => ['sort_order' => SORT_ASC],
+                'defaultOrder' => ['id' => SORT_DESC],
+                'attributes' => ['id', 'name_uz', 'price', 'stock_quantity', 'created'],
             ],
             'pagination' => [
                 'pageSize' => $perPage,
@@ -66,43 +119,16 @@ class CategoryController extends BaseController
         ];
     }
 
-    // GET /v1/category/tree - daraxt ko'rinishda
-    public function actionTree()
-    {
-        $categories = Category::find()
-            ->where(['status' => Category::STATUS_ACTIVE])
-            ->orderBy(['sort_order' => SORT_ASC])
-            ->asArray()
-            ->all();
-
-        return $this->buildTree($categories);
-    }
-
-    private function buildTree(array $categories, $parentId = null)
-    {
-        $tree = [];
-        foreach ($categories as $category) {
-            if ($category['parent_id'] == $parentId) {
-                $children = $this->buildTree($categories, $category['id']);
-                if ($children) {
-                    $category['children'] = $children;
-                }
-                $tree[] = $category;
-            }
-        }
-        return $tree;
-    }
-
-    // GET /v1/category/{id}
+    // GET /v1/product/{id}
     public function actionView($id)
     {
         return $this->findModel($id);
     }
 
-    // POST /v1/category
+    // POST /v1/product
     public function actionCreate()
     {
-        $model = new Category();
+        $model = new Product();
         $model->load(Yii::$app->request->post(), '');
 
         if ($model->save()) {
@@ -117,7 +143,7 @@ class CategoryController extends BaseController
         ];
     }
 
-    // PUT/POST /v1/category/{id}
+    // PUT/POST /v1/product/{id}
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
@@ -134,11 +160,11 @@ class CategoryController extends BaseController
         ];
     }
 
-    // DELETE /v1/category/{id}
+    // DELETE /v1/product/{id}
     public function actionDelete($id)
     {
         $model = $this->findModel($id);
-        $model->status = Category::STATUS_INACTIVE;
+        $model->status = Product::STATUS_INACTIVE;
 
         if ($model->save(false)) {
             Yii::$app->response->statusCode = 204;
@@ -153,10 +179,10 @@ class CategoryController extends BaseController
 
     protected function findModel($id)
     {
-        $model = Category::findOne($id);
+        $model = Product::findOne($id);
 
         if ($model === null) {
-            throw new NotFoundHttpException("Kategoriya topilmadi: $id");
+            throw new NotFoundHttpException("Mahsulot topilmadi: $id");
         }
 
         return $model;
