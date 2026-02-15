@@ -6,6 +6,7 @@ use common\models\Admin;
 use yii\rest\Controller;
 use yii\filters\Cors;
 use yii\web\UnauthorizedHttpException;
+use yii\base\UnknownPropertyException;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Yii;
@@ -15,6 +16,20 @@ class BaseController extends Controller
     public $enableCsrfValidation = false;
 
     protected $admin = null;
+
+    public function runAction($id, $params = [])
+    {
+        try {
+            return parent::runAction($id, $params);
+        } catch (UnknownPropertyException $e) {
+            Yii::$app->response->statusCode = 400;
+            return [
+                'success' => false,
+                'message' => "Noto'g'ri maydon yuborildi",
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
 
     public function behaviors()
     {
@@ -33,12 +48,6 @@ class BaseController extends Controller
     {
         if (!parent::beforeAction($action)) {
             return false;
-        }
-
-        // OPTIONS so'rovi uchun autentifikatsiya talab qilinmaydi
-        if (Yii::$app->request->method === 'OPTIONS') {
-            Yii::$app->response->statusCode = 200;
-            return null;
         }
 
         $this->admin = $this->authenticate();

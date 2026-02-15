@@ -55,6 +55,8 @@ return [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
+                // OPTIONS preflight uchun
+                'OPTIONS <url:.*>' => 'site/options',
                 ''=>'site/index',
                 'POST v1/admin-auth/login' => 'v1/admin-auth/login',
                 'POST v1/admin-auth/refresh' => 'v1/admin-auth/refresh',
@@ -63,7 +65,7 @@ return [
                 [
                     'class' => 'yii\rest\UrlRule',
                     'pluralize' => false,
-                    'controller' => ['v1/admin-role', 'v1/admin', 'v1/brand', 'v1/product', 'v1/product-guide'],
+                    'controller' => ['v1/admin-role', 'v1/admin', 'v1/brand'],
                 ],
                 [
                     'class' => 'yii\rest\UrlRule',
@@ -76,10 +78,24 @@ return [
                 [
                     'class' => 'yii\rest\UrlRule',
                     'pluralize' => false,
-                    'controller' => ['v1/product-image'],
+                    'controller' => ['v1/product'],
                     'extraPatterns' => [
-                        'PUT <id:\d+>/set-primary' => 'set-primary',
-                        'POST <id:\d+>/set-primary' => 'set-primary',
+                        // Fully create/update
+                        'POST create-fully' => 'create-fully',
+                        'PUT <id:\d+>/update-fully' => 'update-fully',
+                        // Product Guides
+                        'GET <product_id:\d+>/guides' => 'guides',
+                        'GET <product_id:\d+>/guides/<id:\d+>' => 'guide-view',
+                        'POST <product_id:\d+>/guides' => 'guide-create',
+                        'PUT <product_id:\d+>/guides/<id:\d+>' => 'guide-update',
+                        'DELETE <product_id:\d+>/guides/<id:\d+>' => 'guide-delete',
+                        // Product Images
+                        'GET <product_id:\d+>/images' => 'images',
+                        'GET <product_id:\d+>/images/<id:\d+>' => 'image-view',
+                        'POST <product_id:\d+>/images' => 'image-create',
+                        'PUT <product_id:\d+>/images/<id:\d+>' => 'image-update',
+                        'PUT <product_id:\d+>/images/<id:\d+>/set-primary' => 'image-set-primary',
+                        'DELETE <product_id:\d+>/images/<id:\d+>' => 'image-delete',
                     ],
                 ],
                 [

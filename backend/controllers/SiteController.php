@@ -19,28 +19,43 @@ class SiteController extends Controller
      */
     public function behaviors()
     {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'rules' => [
-                    [
-                        'actions' => ['login', 'error'],
-                        'allow' => true,
-                    ],
-                    [
-                        'actions' => ['logout', 'index'],
-                        'allow' => true,
-                        'roles' => ['@'],
-                    ],
+        $behaviors = parent::behaviors();
+
+        // CORS
+        $behaviors['cors'] = [
+            'class' => \yii\filters\Cors::class,
+        ];
+
+        $behaviors['access'] = [
+            'class' => AccessControl::class,
+            'rules' => [
+                [
+                    'actions' => ['login', 'error', 'options'],
+                    'allow' => true,
                 ],
-            ],
-            'verbs' => [
-                'class' => VerbFilter::class,
-                'actions' => [
-                    'logout' => ['post'],
+                [
+                    'actions' => ['logout', 'index'],
+                    'allow' => true,
+                    'roles' => ['@'],
                 ],
             ],
         ];
+
+        $behaviors['verbs'] = [
+            'class' => VerbFilter::class,
+            'actions' => [
+                'logout' => ['post'],
+            ],
+        ];
+
+        return $behaviors;
+    }
+
+    // OPTIONS preflight handler
+    public function actionOptions()
+    {
+        Yii::$app->response->statusCode = 204;
+        return null;
     }
 
     /**
