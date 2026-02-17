@@ -131,7 +131,7 @@ class Product extends ActiveRecord
     {
         $fields = parent::fields();
 
-        unset($fields['created'], $fields['updated']);
+        unset($fields['created'], $fields['updated'], $fields['image_id']);
         $fields['created_at'] = 'created';
         $fields['updated_at'] = 'updated';
 
@@ -151,12 +151,53 @@ class Product extends ActiveRecord
             return $this->specifecations ? json_decode($this->specifecations, true) : null;
         };
 
+        $fields['image'] = function () {
+            return $this->getImageData();
+        };
+
         return $fields;
+    }
+
+    protected function getImageData()
+    {
+        $image = $this->image;
+        if (!$image) {
+            return null;
+        }
+
+        $baseUrl = '/api/v1/getfile/' . $image->slug;
+        $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $isImage = in_array(strtolower($image->exts), $imageExtensions);
+
+        $data = [
+            'id' => $image->id,
+            'status' => $image->status == File::STATUS_ACTIVE ? 'ACTIVE' : 'INACTIVE',
+            'slug' => $image->slug,
+            'exts' => $image->exts,
+            'download_url' => $baseUrl,
+            'download' => null,
+            'url' => null,
+        ];
+
+        if ($isImage) {
+            $data['download'] = [
+                'sm' => $baseUrl . '?size=sm',
+                'md' => $baseUrl . '?size=md',
+                'lg' => $baseUrl . '?size=lg',
+            ];
+            $data['url'] = [
+                'sm' => $image->getSmallUrl(),
+                'md' => $image->getMediumUrl(),
+                'lg' => $image->getOriginalUrl(),
+            ];
+        }
+
+        return $data;
     }
 
     public function extraFields()
     {
-        return ['category', 'brand', 'image', 'images', 'guides'];
+        return ['category', 'brand', 'images', 'guides'];
     }
 
     public function getCategory()

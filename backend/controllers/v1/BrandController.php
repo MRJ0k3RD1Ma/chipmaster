@@ -14,7 +14,7 @@ class BrandController extends BaseController
         $request = Yii::$app->request;
         $perPage = (int)$request->get('per_page', 20);
 
-        $query = Brand::find()->with('logo');
+        $query = Brand::find()->with('logo')->andWhere(['status'=>1]);
 
         // Search by name
         if ($name = $request->get('name')) {

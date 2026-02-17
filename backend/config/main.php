@@ -58,6 +58,7 @@ return [
                 // OPTIONS preflight uchun
                 'OPTIONS <url:.*>' => 'site/options',
                 ''=>'site/index',
+                'GET v1/getfile/<slug:[\w-]+>' => 'site/file',
                 'POST v1/admin-auth/login' => 'v1/admin-auth/login',
                 'POST v1/admin-auth/refresh' => 'v1/admin-auth/refresh',
                 'POST v1/admin-auth/logout' => 'v1/admin-auth/logout',

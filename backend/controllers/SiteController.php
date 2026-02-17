@@ -2,8 +2,10 @@
 
 namespace backend\controllers;
 
+use common\models\File;
 use common\models\LoginForm;
 use Yii;
+use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use yii\rest\Controller;
@@ -30,7 +32,7 @@ class SiteController extends Controller
             'class' => AccessControl::class,
             'rules' => [
                 [
-                    'actions' => ['login', 'error', 'options'],
+                    'actions' => ['login', 'error', 'options', 'file'],
                     'allow' => true,
                 ],
                 [
@@ -115,5 +117,51 @@ class SiteController extends Controller
         Yii::$app->user->logout();
 
         return $this->goHome();
+    }
+
+    /**
+     * Faylni yuklab olish yoki ko'rish
+     *
+     * @param string $slug Fayl slug
+     * @param string $mode inline|download
+     * @param string $size sm|md|lg (faqat rasmlar uchun)
+     * @return \yii\web\Response
+     * @throws NotFoundHttpException
+     */
+    public function actionFile($slug, $mode = 'inline', $size = 'lg')
+    {
+        $file = File::find()
+            ->where(['slug' => $slug, 'status' => File::STATUS_ACTIVE])
+            ->one();
+
+        if (!$file) {
+            throw new NotFoundHttpException('Fayl topilmadi');
+        }
+
+        // Rasm o'lchami bo'yicha URL olish
+        switch ($size) {
+            case 'sm':
+                $fileUrl = $file->getSmallUrl();
+                break;
+            case 'md':
+                $fileUrl = $file->getMediumUrl();
+                break;
+            default:
+                $fileUrl = $file->getOriginalUrl();
+        }
+
+        $filePath = Yii::getAlias('@frontend/web') . $fileUrl;
+
+        if (!file_exists($filePath)) {
+            throw new NotFoundHttpException('Fayl serverda topilmadi');
+        }
+
+        $mimeType = mime_content_type($filePath) ?: 'application/octet-stream';
+        $fileName = $file->name . '.' . $file->exts;
+
+        return Yii::$app->response->sendFile($filePath, $fileName, [
+            'mimeType' => $mimeType,
+            'inline' => ($mode !== 'download'),
+        ]);
     }
 }

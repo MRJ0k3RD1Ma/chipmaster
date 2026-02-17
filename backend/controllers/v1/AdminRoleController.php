@@ -15,7 +15,7 @@ class AdminRoleController extends BaseController
         $request = Yii::$app->request;
         $perPage = (int)$request->get('per_page', 20);
 
-        $query = AdminRole::find();
+        $query = AdminRole::find()->andWhere(['status'=>1]);
 
         // Search by name
         if ($name = $request->get('name')) {

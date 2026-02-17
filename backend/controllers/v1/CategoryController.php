@@ -14,7 +14,7 @@ class CategoryController extends BaseController
         $request = Yii::$app->request;
         $perPage = (int)$request->get('per_page', 20);
 
-        $query = Category::find();
+        $query = Category::find()->andWhere(['status'=>1]);
 
         // Search by name
         if ($name = $request->get('name')) {
@@ -39,7 +39,7 @@ class CategoryController extends BaseController
         $provider = new \yii\data\ActiveDataProvider([
             'query' => $query,
             'sort' => [
-                'defaultOrder' => ['sort_order' => SORT_ASC],
+                'defaultOrder' => ['id' => SORT_DESC],
             ],
             'pagination' => [
                 'pageSize' => $perPage,

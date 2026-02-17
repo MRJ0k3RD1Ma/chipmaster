@@ -122,6 +122,14 @@ class FileController extends BaseController
 
         // Barcha chunklar kelgan - faylni birlashtirish
         $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        if (empty($extension)) {
+            $this->cleanupChunks($chunkPath);
+            Yii::$app->response->statusCode = 400;
+            return [
+                'success' => false,
+                'message' => "Fayl kengaytmasi topilmadi",
+            ];
+        }
         $baseName = pathinfo($fileName, PATHINFO_FILENAME);
         $uniqueName = time() . '_' . Yii::$app->security->generateRandomString(8);
         $newFileName = $uniqueName . '.' . $extension;
@@ -175,11 +183,35 @@ class FileController extends BaseController
         }
 
         Yii::$app->response->statusCode = 201;
-        return [
+
+        $baseUrl = '/api/v1/getfile/' . $file->slug;
+        $isImage = $this->isImage($extension);
+
+        $response = [
             'success' => true,
             'id' => $file->id,
-            'url' => $file->getUrls(),
+            'status' => 'ACTIVE',
+            'slug' => $file->slug,
+            'exts' => $extension,
+            'download_url' => $baseUrl,
+            'download' => null,
+            'url' => null,
         ];
+
+        if ($isImage) {
+            $response['download'] = [
+                'sm' => $baseUrl . '?size=sm',
+                'md' => $baseUrl . '?size=md',
+                'lg' => $baseUrl . '?size=lg',
+            ];
+            $response['url'] = [
+                'sm' => $urls['small'] ?? $urls['original'],
+                'md' => $urls['medium'] ?? $urls['original'],
+                'lg' => $urls['original'],
+            ];
+        }
+
+        return $response;
     }
 
     // POST /v1/file/cancel - Yuklashni bekor qilish va temp fayllarni tozalash

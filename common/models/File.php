@@ -52,7 +52,7 @@ class File extends ActiveRecord
     {
         return [
             [['name', 'url'], 'required'],
-            [['name', 'exts', 'url'], 'string', 'max' => 255],
+            [['name', 'exts', 'url','slug'], 'string', 'max' => 255],
             [['status'], 'integer'],
             ['status', 'default', 'value' => self::STATUS_ACTIVE],
             ['status', 'in', 'range' => [self::STATUS_INACTIVE, self::STATUS_ACTIVE]],
