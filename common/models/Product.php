@@ -39,6 +39,7 @@ use yii\db\Expression;
  * @property File $image
  * @property ProductImage[] $images
  * @property ProductGuide[] $guides
+ * @property ProductSoft[] $softs
  */
 class Product extends ActiveRecord
 {
@@ -155,6 +156,13 @@ class Product extends ActiveRecord
             return $this->getImageData();
         };
 
+        $fields['brand'] = function () {
+            return $this->brand;
+        };
+        $fields['category'] = function () {
+            return $this->category;
+        };
+
         return $fields;
     }
 
@@ -197,7 +205,7 @@ class Product extends ActiveRecord
 
     public function extraFields()
     {
-        return ['category', 'brand', 'images', 'guides'];
+        return ['category', 'brand', 'images', 'guides', 'softs'];
     }
 
     public function getCategory()
@@ -227,6 +235,12 @@ class Product extends ActiveRecord
         return $this->hasMany(ProductGuide::class, ['product_id' => 'id'])
             ->andWhere(['status' => ProductGuide::STATUS_ACTIVE])
             ->orderBy(['sort_order' => SORT_ASC]);
+    }
+
+    public function getSofts()
+    {
+        return $this->hasMany(ProductSoft::class, ['product_id' => 'id'])
+            ->andWhere(['status' => ProductSoft::STATUS_ACTIVE]);
     }
 
     public function beforeSave($insert)

@@ -5,6 +5,7 @@ namespace backend\controllers\v1;
 use common\models\Product;
 use common\models\ProductGuide;
 use common\models\ProductImage;
+use common\models\ProductSoft;
 use yii\web\NotFoundHttpException;
 use Yii;
 
@@ -67,28 +68,23 @@ class ProductController extends BaseController
         }
 
         // Expand relations
+        $with = ['brand','category','image'];
+
         if ($expand = $request->get('expand')) {
+
             $expandFields = array_map('trim', explode(',', $expand));
-            $with = [];
-            if (in_array('category', $expandFields)) {
-                $with[] = 'category';
-            }
-            if (in_array('brand', $expandFields)) {
-                $with[] = 'brand';
-            }
-            if (in_array('image', $expandFields)) {
-                $with[] = 'image';
-            }
+
             if (in_array('images', $expandFields)) {
                 $with[] = 'images';
             }
             if (in_array('guides', $expandFields)) {
                 $with[] = 'guides';
             }
-            if (!empty($with)) {
-                $query->with($with);
+            if (in_array('softs', $expandFields)) {
+                $with[] = 'softs';
             }
         }
+        $query->with($with);
 
         $provider = new \yii\data\ActiveDataProvider([
             'query' => $query,
@@ -124,7 +120,18 @@ class ProductController extends BaseController
     // GET /v1/product/{id}
     public function actionView($id)
     {
-        return $this->findModel($id);
+
+
+        $model = Product::find()
+            ->where(['id' => $id])
+            ->with(['brand', 'category', 'image', 'images', 'guides', 'softs'])
+            ->one();
+
+        if ($model === null) {
+            throw new NotFoundHttpException("Mahsulot topilmadi: $id");
+        }
+
+        return $model->toArray([], ['images', 'guides', 'softs']);
     }
 
     // POST /v1/product
@@ -182,7 +189,21 @@ class ProductController extends BaseController
     // POST /v1/product/create-fully
     public function actionCreateFully()
     {
-        $request = Yii::$app->request->post();
+        $request = Yii::$app->request->getBodyParams();
+
+      /*  // DEBUG: Requestni ko'rish
+        return [
+            'debug' => true,
+            'request_keys' => array_keys($request),
+            'has_guides' => isset($request['guides']),
+            'has_images' => isset($request['images']),
+            'has_softs' => isset($request['softs']),
+            'guides_count' => count($request['guides'] ?? []),
+            'images_count' => count($request['images'] ?? []),
+            'softs_count' => count($request['softs'] ?? []),
+            'raw_request' => $request,
+        ];*/
+
         $transaction = Yii::$app->db->beginTransaction();
 
         try {
@@ -226,6 +247,22 @@ class ProductController extends BaseController
                 $savedImages[] = $image;
             }
 
+            // Softs yaratish
+            $softs = $request['softs'] ?? [];
+            $savedSofts = [];
+            foreach ($softs as $index => $softData) {
+                $soft = new ProductSoft();
+                $soft->load($softData, '');
+                $soft->product_id = $product->id;
+
+                if (!$soft->save()) {
+                    throw new \yii\base\UserException(json_encode([
+                        'softs' => [$index => $soft->errors]
+                    ]));
+                }
+                $savedSofts[] = $soft;
+            }
+
             $transaction->commit();
 
             Yii::$app->response->statusCode = 201;
@@ -235,6 +272,7 @@ class ProductController extends BaseController
                 'product' => $product,
                 'guides' => $savedGuides,
                 'images' => $savedImages,
+                'softs' => $savedSofts,
             ];
 
         } catch (\yii\base\UserException $e) {
@@ -258,7 +296,7 @@ class ProductController extends BaseController
     public function actionUpdateFully($id)
     {
         $product = $this->findModel($id);
-        $request = Yii::$app->request->post();
+        $request = Yii::$app->request->getBodyParams();
         $transaction = Yii::$app->db->beginTransaction();
 
         try {
@@ -363,6 +401,53 @@ class ProductController extends BaseController
                 );
             }
 
+            // Softs yangilash
+            if (isset($request['softs'])) {
+                $softs = $request['softs'];
+                $existingSoftIds = [];
+
+                foreach ($softs as $index => $softData) {
+                    if (!empty($softData['id'])) {
+                        // Mavjud soft ni yangilash
+                        $soft = ProductSoft::findOne([
+                            'id' => $softData['id'],
+                            'product_id' => $product->id
+                        ]);
+
+                        if (!$soft) {
+                            throw new \yii\base\UserException(json_encode([
+                                'softs' => [$index => ["Dastur topilmadi: {$softData['id']}"]]
+                            ]));
+                        }
+
+                        $soft->load($softData, '');
+                    } else {
+                        // Yangi soft yaratish
+                        $soft = new ProductSoft();
+                        $soft->load($softData, '');
+                        $soft->product_id = $product->id;
+                    }
+
+                    if (!$soft->save()) {
+                        throw new \yii\base\UserException(json_encode([
+                            'softs' => [$index => $soft->errors]
+                        ]));
+                    }
+
+                    $existingSoftIds[] = $soft->id;
+                }
+
+                // Request da kelmaganlarni o'chirish (soft delete)
+                ProductSoft::updateAll(
+                    ['status' => ProductSoft::STATUS_INACTIVE],
+                    ['and',
+                        ['product_id' => $product->id],
+                        ['not in', 'id', $existingSoftIds],
+                        ['status' => ProductSoft::STATUS_ACTIVE]
+                    ]
+                );
+            }
+
             $transaction->commit();
 
             $product->refresh();
@@ -371,6 +456,7 @@ class ProductController extends BaseController
                 'product' => $product,
                 'guides' => $product->getGuides()->where(['status' => ProductGuide::STATUS_ACTIVE])->all(),
                 'images' => $product->getImages()->where(['status' => ProductImage::STATUS_ACTIVE])->all(),
+                'softs' => $product->getSofts()->where(['status' => ProductSoft::STATUS_ACTIVE])->all(),
             ];
 
         } catch (\yii\base\UserException $e) {
@@ -696,6 +782,143 @@ class ProductController extends BaseController
 
         if ($model === null) {
             throw new NotFoundHttpException("Rasm topilmadi: $id");
+        }
+
+        return $model;
+    }
+
+    // ==================== PRODUCT SOFT ====================
+
+    // GET /v1/product/{product_id}/softs
+    public function actionSofts($product_id)
+    {
+        $this->findModel($product_id);
+
+        $request = Yii::$app->request;
+        $perPage = (int)$request->get('per_page', 20);
+
+        $query = ProductSoft::find()->where(['product_id' => $product_id]);
+
+        if (($status = $request->get('status')) !== null) {
+            $query->andFilterWhere(['status' => $status]);
+        }
+
+        if ($search = $request->get('search')) {
+            $query->andWhere(['like', 'name', $search]);
+        }
+
+        if ($expand = $request->get('expand')) {
+            $expandFields = array_map('trim', explode(',', $expand));
+            $with = [];
+            if (in_array('file', $expandFields)) {
+                $with[] = 'file';
+            }
+            if (!empty($with)) {
+                $query->with($with);
+            }
+        }
+
+        $provider = new \yii\data\ActiveDataProvider([
+            'query' => $query,
+            'sort' => [
+                'defaultOrder' => ['id' => SORT_DESC],
+                'attributes' => ['id', 'name', 'created'],
+            ],
+            'pagination' => [
+                'pageSize' => $perPage,
+                'pageParam' => 'page',
+                'pageSizeParam' => 'per_page',
+            ],
+        ]);
+
+        $pagination = $provider->pagination;
+        $totalItems = $provider->totalCount;
+        $totalPages = ceil($totalItems / $perPage);
+        $currentPage = $pagination->page + 1;
+
+        return [
+            'data' => $provider->getModels(),
+            'pagination' => [
+                'current_page' => $currentPage,
+                'per_page' => $perPage,
+                'total_items' => $totalItems,
+                'total_pages' => $totalPages,
+                'has_next' => $currentPage < $totalPages,
+                'has_prev' => $currentPage > 1,
+            ],
+        ];
+    }
+
+    // GET /v1/product/{product_id}/softs/{id}
+    public function actionSoftView($product_id, $id)
+    {
+        $this->findModel($product_id);
+        return $this->findSoft($id, $product_id);
+    }
+
+    // POST /v1/product/{product_id}/softs
+    public function actionSoftCreate($product_id)
+    {
+        $this->findModel($product_id);
+
+        $model = new ProductSoft();
+        $model->load(Yii::$app->request->post(), '');
+        $model->product_id = $product_id;
+
+        if ($model->save()) {
+            Yii::$app->response->statusCode = 201;
+            return $model;
+        }
+
+        Yii::$app->response->statusCode = 400;
+        return [
+            'success' => false,
+            'errors' => $model->errors,
+        ];
+    }
+
+    // PUT /v1/product/{product_id}/softs/{id}
+    public function actionSoftUpdate($product_id, $id)
+    {
+        $this->findModel($product_id);
+        $model = $this->findSoft($id, $product_id);
+        $model->load(Yii::$app->request->post(), '');
+
+        if ($model->save()) {
+            return $model;
+        }
+
+        Yii::$app->response->statusCode = 400;
+        return [
+            'success' => false,
+            'errors' => $model->errors,
+        ];
+    }
+
+    // DELETE /v1/product/{product_id}/softs/{id}
+    public function actionSoftDelete($product_id, $id)
+    {
+        $this->findModel($product_id);
+        $model = $this->findSoft($id, $product_id);
+        $model->status = ProductSoft::STATUS_INACTIVE;
+
+        if ($model->save(false)) {
+            Yii::$app->response->statusCode = 204;
+            return null;
+        }
+
+        return [
+            'success' => false,
+            'message' => "O'chirib bo'lmadi",
+        ];
+    }
+
+    protected function findSoft($id, $product_id)
+    {
+        $model = ProductSoft::findOne(['id' => $id, 'product_id' => $product_id]);
+
+        if ($model === null) {
+            throw new NotFoundHttpException("Dastur topilmadi: $id");
         }
 
         return $model;

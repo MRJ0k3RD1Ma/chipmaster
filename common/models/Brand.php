@@ -90,7 +90,7 @@ class Brand extends ActiveRecord
         };
 
         $fields['logo'] = function () {
-            return $this->logo;
+            return $this->getImageData();
         };
 
         return $fields;
@@ -102,5 +102,42 @@ class Brand extends ActiveRecord
     public function getLogo()
     {
         return $this->hasOne(File::class, ['id' => 'logo_id']);
+    }
+
+    protected function getImageData()
+    {
+        $image = $this->logo;
+        if (!$image) {
+            return null;
+        }
+
+        $baseUrl = '/api/v1/getfile/' . $image->slug;
+        $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $isImage = in_array(strtolower($image->exts), $imageExtensions);
+
+        $data = [
+            'id' => $image->id,
+            'status' => $image->status == File::STATUS_ACTIVE ? 'ACTIVE' : 'INACTIVE',
+            'slug' => $image->slug,
+            'exts' => $image->exts,
+            'download_url' => $baseUrl,
+            'download' => null,
+            'url' => null,
+        ];
+
+        if ($isImage) {
+            $data['download'] = [
+                'sm' => $baseUrl . '?size=sm',
+                'md' => $baseUrl . '?size=md',
+                'lg' => $baseUrl . '?size=lg',
+            ];
+            $data['url'] = [
+                'sm' => $image->getSmallUrl(),
+                'md' => $image->getMediumUrl(),
+                'lg' => $image->getOriginalUrl(),
+            ];
+        }
+
+        return $data;
     }
 }

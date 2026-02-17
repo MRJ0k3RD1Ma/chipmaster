@@ -97,6 +97,12 @@ return [
                         'PUT <product_id:\d+>/images/<id:\d+>' => 'image-update',
                         'PUT <product_id:\d+>/images/<id:\d+>/set-primary' => 'image-set-primary',
                         'DELETE <product_id:\d+>/images/<id:\d+>' => 'image-delete',
+                        // Product Softs
+                        'GET <product_id:\d+>/softs' => 'softs',
+                        'GET <product_id:\d+>/softs/<id:\d+>' => 'soft-view',
+                        'POST <product_id:\d+>/softs' => 'soft-create',
+                        'PUT <product_id:\d+>/softs/<id:\d+>' => 'soft-update',
+                        'DELETE <product_id:\d+>/softs/<id:\d+>' => 'soft-delete',
                     ],
                 ],
                 [
