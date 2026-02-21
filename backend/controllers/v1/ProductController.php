@@ -6,6 +6,7 @@ use common\models\Product;
 use common\models\ProductGuide;
 use common\models\ProductImage;
 use common\models\ProductSoft;
+use common\models\Rating;
 use yii\web\NotFoundHttpException;
 use Yii;
 
@@ -919,6 +920,158 @@ class ProductController extends BaseController
 
         if ($model === null) {
             throw new NotFoundHttpException("Dastur topilmadi: $id");
+        }
+
+        return $model;
+    }
+
+    // ==================== PRODUCT RATING ====================
+
+    // GET /v1/product/{product_id}/ratings
+    public function actionRatings($product_id)
+    {
+        $this->findModel($product_id);
+
+        $request = Yii::$app->request;
+        $perPage = (int)$request->get('per_page', 20);
+
+        $query = Rating::find()->where(['product_id' => $product_id]);
+
+        if (($status = $request->get('status')) !== null) {
+            $query->andFilterWhere(['status' => $status]);
+        }
+
+        if (($rate = $request->get('rate')) !== null) {
+            $query->andFilterWhere(['rate' => $rate]);
+        }
+
+        if (($userId = $request->get('user_id')) !== null) {
+            $query->andFilterWhere(['user_id' => $userId]);
+        }
+
+        if (($orderId = $request->get('order_id')) !== null) {
+            $query->andFilterWhere(['order_id' => $orderId]);
+        }
+
+        if ($search = $request->get('search')) {
+            $query->andWhere(['like', 'description', $search]);
+        }
+
+        if ($expand = $request->get('expand')) {
+            $expandFields = array_map('trim', explode(',', $expand));
+            $with = [];
+            if (in_array('user', $expandFields)) {
+                $with[] = 'user';
+            }
+            if (in_array('order', $expandFields)) {
+                $with[] = 'order';
+            }
+            if (!empty($with)) {
+                $query->with($with);
+            }
+        }
+
+        $provider = new \yii\data\ActiveDataProvider([
+            'query' => $query,
+            'sort' => [
+                'defaultOrder' => ['id' => SORT_DESC],
+                'attributes' => ['id', 'rate', 'created'],
+            ],
+            'pagination' => [
+                'pageSize' => $perPage,
+                'pageParam' => 'page',
+                'pageSizeParam' => 'per_page',
+            ],
+        ]);
+
+        $pagination = $provider->pagination;
+        $totalItems = $provider->totalCount;
+        $totalPages = ceil($totalItems / $perPage);
+        $currentPage = $pagination->page + 1;
+
+        return [
+            'data' => $provider->getModels(),
+            'pagination' => [
+                'current_page' => $currentPage,
+                'per_page' => $perPage,
+                'total_items' => $totalItems,
+                'total_pages' => $totalPages,
+                'has_next' => $currentPage < $totalPages,
+                'has_prev' => $currentPage > 1,
+            ],
+        ];
+    }
+
+    // GET /v1/product/{product_id}/ratings/{id}
+    public function actionRatingView($product_id, $id)
+    {
+        $this->findModel($product_id);
+        return $this->findRating($id, $product_id);
+    }
+
+    // POST /v1/product/{product_id}/ratings
+    public function actionRatingCreate($product_id)
+    {
+        $this->findModel($product_id);
+
+        $model = new Rating();
+        $model->load(Yii::$app->request->post(), '');
+        $model->product_id = $product_id;
+
+        if ($model->save()) {
+            Yii::$app->response->statusCode = 201;
+            return $model;
+        }
+
+        Yii::$app->response->statusCode = 400;
+        return [
+            'success' => false,
+            'errors' => $model->errors,
+        ];
+    }
+
+    // PUT /v1/product/{product_id}/ratings/{id}
+    public function actionRatingUpdate($product_id, $id)
+    {
+        $this->findModel($product_id);
+        $model = $this->findRating($id, $product_id);
+        $model->load(Yii::$app->request->post(), '');
+
+        if ($model->save()) {
+            return $model;
+        }
+
+        Yii::$app->response->statusCode = 400;
+        return [
+            'success' => false,
+            'errors' => $model->errors,
+        ];
+    }
+
+    // DELETE /v1/product/{product_id}/ratings/{id}
+    public function actionRatingDelete($product_id, $id)
+    {
+        $this->findModel($product_id);
+        $model = $this->findRating($id, $product_id);
+        $model->status = Rating::STATUS_INACTIVE;
+
+        if ($model->save(false)) {
+            Yii::$app->response->statusCode = 204;
+            return null;
+        }
+
+        return [
+            'success' => false,
+            'message' => "O'chirib bo'lmadi",
+        ];
+    }
+
+    protected function findRating($id, $product_id)
+    {
+        $model = Rating::findOne(['id' => $id, 'product_id' => $product_id]);
+
+        if ($model === null) {
+            throw new NotFoundHttpException("Baho topilmadi: $id");
         }
 
         return $model;

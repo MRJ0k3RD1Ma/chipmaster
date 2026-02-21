@@ -23,7 +23,7 @@ use yii\db\Expression;
  * @property int $price
  * @property int $discount_price
  * @property string $discount_expires
- * @property string $specifecations
+ * @property string $specifications
  * @property int $stock_quantity
  * @property int $status
  * @property int $featured
@@ -40,6 +40,7 @@ use yii\db\Expression;
  * @property ProductImage[] $images
  * @property ProductGuide[] $guides
  * @property ProductSoft[] $softs
+ * @property Rating[] $ratings
  */
 class Product extends ActiveRecord
 {
@@ -79,22 +80,23 @@ class Product extends ActiveRecord
     public function rules()
     {
         return [
-            [['category_id', 'name_uz', 'name_ru', 'sku', 'price'], 'required'],
+            [['category_id', 'name_uz', 'name_ru', 'price'], 'required'],
             [['name_uz', 'name_ru', 'slug', 'sku', 'seo_title'], 'string', 'max' => 255],
             [['brand_id'], 'string', 'max' => 255],
             [['description_uz', 'description_ru', 'seo_description'], 'string'],
-            [['category_id', 'price', 'discount_price', 'stock_quantity', 'status', 'featured', 'image_id', 'is_device'], 'integer'],
+            [['category_id', 'price', 'discount_price', 'stock_quantity', 'status', 'featured', 'image_id', 'is_device','rating'], 'integer'],
             ['sku', 'unique'],
             ['status', 'default', 'value' => self::STATUS_ACTIVE],
             ['featured', 'default', 'value' => self::FEATURED_YES],
             ['is_device', 'default', 'value' => self::IS_DEVICE_YES],
             ['discount_price', 'default', 'value' => 0],
             ['stock_quantity', 'default', 'value' => 0],
+            ['rating', 'default', 'value' => 5],
             ['status', 'in', 'range' => [self::STATUS_INACTIVE, self::STATUS_ACTIVE]],
             ['featured', 'in', 'range' => [self::FEATURED_NO, self::FEATURED_YES]],
             ['is_device', 'in', 'range' => [self::IS_DEVICE_NO, self::IS_DEVICE_YES]],
             ['discount_expires', 'safe'],
-            ['specifecations', 'safe'],
+            ['specifications', 'safe'],
             ['category_id', 'exist', 'skipOnError' => true, 'targetClass' => Category::class, 'targetAttribute' => ['category_id' => 'id']],
             ['image_id', 'exist', 'skipOnError' => true, 'targetClass' => File::class, 'targetAttribute' => ['image_id' => 'id']],
         ];
@@ -113,9 +115,10 @@ class Product extends ActiveRecord
             'description_ru' => 'Tavsif (RU)',
             'sku' => 'SKU',
             'price' => 'Narx',
+            'rating' => 'Reyting',
             'discount_price' => 'Chegirma narxi',
             'discount_expires' => 'Chegirma muddati',
-            'specifecations' => 'Xususiyatlar',
+            'specifications' => 'Xususiyatlar',
             'stock_quantity' => 'Ombordagi soni',
             'status' => 'Status',
             'featured' => 'Tanlangan',
@@ -148,8 +151,8 @@ class Product extends ActiveRecord
             return (bool)$this->is_device;
         };
 
-        $fields['specifecations'] = function () {
-            return $this->specifecations ? json_decode($this->specifecations, true) : null;
+        $fields['specifications'] = function () {
+            return $this->specifications ? json_decode($this->specifications, true) : null;
         };
 
         $fields['image'] = function () {
@@ -205,7 +208,7 @@ class Product extends ActiveRecord
 
     public function extraFields()
     {
-        return ['category', 'brand', 'images', 'guides', 'softs'];
+        return ['category', 'brand', 'images', 'guides', 'softs', 'ratings'];
     }
 
     public function getCategory()
@@ -243,14 +246,32 @@ class Product extends ActiveRecord
             ->andWhere(['status' => ProductSoft::STATUS_ACTIVE]);
     }
 
+    public function getRatings()
+    {
+        return $this->hasMany(Rating::class, ['product_id' => 'id'])
+            ->andWhere(['status' => Rating::STATUS_ACTIVE]);
+    }
+
     public function beforeSave($insert)
     {
         if (parent::beforeSave($insert)) {
-            if (is_array($this->specifecations)) {
-                $this->specifecations = json_encode($this->specifecations, JSON_UNESCAPED_UNICODE);
+            if ($insert && empty($this->sku)) {
+                $this->sku = $this->generateUniqueSku();
+            }
+            if (is_array($this->specifications)) {
+                $this->specifications = json_encode($this->specifications, JSON_UNESCAPED_UNICODE);
             }
             return true;
         }
         return false;
+    }
+
+    protected function generateUniqueSku()
+    {
+        do {
+            $sku = (string) mt_rand(1000000000, 9999999999);
+        } while (self::find()->where(['sku' => $sku])->exists());
+
+        return $sku;
     }
 }

@@ -103,6 +103,12 @@ return [
                         'POST <product_id:\d+>/softs' => 'soft-create',
                         'PUT <product_id:\d+>/softs/<id:\d+>' => 'soft-update',
                         'DELETE <product_id:\d+>/softs/<id:\d+>' => 'soft-delete',
+                        // Product Ratings
+                        'GET <product_id:\d+>/ratings' => 'ratings',
+                        'GET <product_id:\d+>/ratings/<id:\d+>' => 'rating-view',
+                        'POST <product_id:\d+>/ratings' => 'rating-create',
+                        'PUT <product_id:\d+>/ratings/<id:\d+>' => 'rating-update',
+                        'DELETE <product_id:\d+>/ratings/<id:\d+>' => 'rating-delete',
                     ],
                 ],
                 [
