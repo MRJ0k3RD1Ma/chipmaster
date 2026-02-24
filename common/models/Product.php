@@ -13,7 +13,7 @@ use yii\db\Expression;
  *
  * @property int $id
  * @property int $category_id
- * @property string $brand_id
+ * @property int|null $brand_id
  * @property string $name_uz
  * @property string $name_ru
  * @property string $slug
@@ -31,8 +31,9 @@ use yii\db\Expression;
  * @property string $seo_description
  * @property string $created
  * @property string $updated
- * @property int $image_id
+ * @property int|null $image_id
  * @property int $is_device
+ * @property int $rating
  *
  * @property Category $category
  * @property Brand $brand
@@ -82,9 +83,9 @@ class Product extends ActiveRecord
         return [
             [['category_id', 'name_uz', 'name_ru', 'price'], 'required'],
             [['name_uz', 'name_ru', 'slug', 'sku', 'seo_title'], 'string', 'max' => 255],
-            [['brand_id'], 'string', 'max' => 255],
             [['description_uz', 'description_ru', 'seo_description'], 'string'],
-            [['category_id', 'price', 'discount_price', 'stock_quantity', 'status', 'featured', 'image_id', 'is_device','rating'], 'integer'],
+            [['category_id', 'brand_id', 'price', 'discount_price', 'stock_quantity', 'status', 'featured', 'image_id', 'is_device', 'rating'], 'integer'],
+            ['brand_id', 'exist', 'skipOnError' => true, 'targetClass' => Brand::class, 'targetAttribute' => ['brand_id' => 'id']],
             ['sku', 'unique'],
             ['status', 'default', 'value' => self::STATUS_ACTIVE],
             ['featured', 'default', 'value' => self::FEATURED_YES],
@@ -260,6 +261,16 @@ class Product extends ActiveRecord
             }
             if (is_array($this->specifications)) {
                 $this->specifications = json_encode($this->specifications, JSON_UNESCAPED_UNICODE);
+            }
+            // ISO formatni MySQL datetime formatga o'tkazish
+            if (!empty($this->discount_expires)) {
+                try {
+                    $date = new \DateTime($this->discount_expires);
+                    $this->discount_expires = $date->format('Y-m-d H:i:s');
+                } catch (\Exception $e) {
+                    // Format noto'g'ri bo'lsa, null qilib qo'yamiz
+                    $this->discount_expires = null;
+                }
             }
             return true;
         }
