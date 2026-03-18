@@ -66,12 +66,20 @@ return [
                 [
                     'class' => 'yii\rest\UrlRule',
                     'pluralize' => false,
-                    'controller' => ['v1/admin-role', 'v1/admin', 'v1/brand'],
+                    'controller' => ['v1/admin-role', 'v1/admin', 'v1/brand', 'v1/article'],
                 ],
                 [
                     'class' => 'yii\rest\UrlRule',
                     'pluralize' => false,
                     'controller' => ['v1/category'],
+                    'extraPatterns' => [
+                        'GET tree' => 'tree',
+                    ],
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
+                    'controller' => ['v1/navigation'],
                     'extraPatterns' => [
                         'GET tree' => 'tree',
                     ],

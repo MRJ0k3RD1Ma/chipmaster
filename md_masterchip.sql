@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 21, 2026 at 05:38 PM
+-- Generation Time: Mar 14, 2026 at 10:09 AM
 -- Server version: 10.4.27-MariaDB
 -- PHP Version: 7.4.33
 
@@ -67,6 +67,36 @@ CREATE TABLE `admin_role` (
 
 INSERT INTO `admin_role` (`id`, `name`, `status`, `created`, `updated`) VALUES
 (1, 'admin', 1, '2026-02-10 22:12:15', '2026-02-17 16:18:15');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `article`
+--
+
+CREATE TABLE `article` (
+  `id` int(11) NOT NULL,
+  `slug` varchar(255) DEFAULT NULL,
+  `name_uz` varchar(255) NOT NULL DEFAULT '',
+  `name_ru` varchar(255) NOT NULL DEFAULT '',
+  `navigation_id` int(11) NOT NULL,
+  `description_uz` text NOT NULL DEFAULT '',
+  `description_ru` text NOT NULL DEFAULT '',
+  `detail_uz` longtext DEFAULT NULL,
+  `detail_ru` longtext DEFAULT NULL,
+  `show_counter` int(11) DEFAULT 0,
+  `publish_date` datetime DEFAULT current_timestamp(),
+  `status` int(11) DEFAULT 1,
+  `created` datetime DEFAULT current_timestamp(),
+  `updated` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `article`
+--
+
+INSERT INTO `article` (`id`, `slug`, `name_uz`, `name_ru`, `navigation_id`, `description_uz`, `description_ru`, `detail_uz`, `detail_ru`, `show_counter`, `publish_date`, `status`, `created`, `updated`) VALUES
+(1, 'maqola-nomi-222', 'Maqola nomi 222', 'Название статьи', 1, 'Qisqacha tavsif o\'zbek tilida', 'Краткое описание на русском', '<p>Batafsil ma\'lumot o\'zbek tilida</p>', '<p>Подробная информация на русском</p>', 0, '2026-03-02 10:00:00', 1, '2026-03-02 22:45:40', '2026-03-02 22:46:17');
 
 -- --------------------------------------------------------
 
@@ -192,6 +222,35 @@ INSERT INTO `files` (`id`, `name`, `slug`, `exts`, `url`, `status`, `created`, `
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `navigation`
+--
+
+CREATE TABLE `navigation` (
+  `id` int(11) NOT NULL,
+  `name_uz` varchar(255) NOT NULL DEFAULT '',
+  `name_ru` varchar(255) NOT NULL DEFAULT '',
+  `slug` varchar(255) DEFAULT NULL,
+  `icon` varchar(255) DEFAULT NULL,
+  `image_id` int(11) DEFAULT NULL,
+  `template` varchar(255) NOT NULL DEFAULT '',
+  `parent_id` int(11) DEFAULT NULL,
+  `sort_order` int(11) DEFAULT 0,
+  `status` int(11) DEFAULT 1,
+  `created` datetime DEFAULT current_timestamp(),
+  `updated` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `navigation`
+--
+
+INSERT INTO `navigation` (`id`, `name_uz`, `name_ru`, `slug`, `icon`, `image_id`, `template`, `parent_id`, `sort_order`, `status`, `created`, `updated`) VALUES
+(1, 'testnasmeasa', 'testnasmeasda', 'testnasmeasa', '', 1, '', NULL, 1, 1, '2026-03-02 22:33:34', '2026-03-02 22:34:51'),
+(2, 'testnasmeasa', 'testnasmeasda', 'testnasmeasa-2', '', 1, '', 1, 1, 1, '2026-03-02 22:34:30', '2026-03-02 22:34:41');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `orders`
 --
 
@@ -303,7 +362,7 @@ CREATE TABLE `payment_method` (
 CREATE TABLE `product` (
   `id` int(11) NOT NULL,
   `category_id` int(11) NOT NULL,
-  `brand_id` varchar(255) DEFAULT NULL,
+  `brand_id` int(11) DEFAULT NULL,
   `name_uz` varchar(255) NOT NULL DEFAULT '',
   `name_ru` varchar(255) NOT NULL DEFAULT '',
   `slug` varchar(255) NOT NULL DEFAULT '',
@@ -331,9 +390,11 @@ CREATE TABLE `product` (
 --
 
 INSERT INTO `product` (`id`, `category_id`, `brand_id`, `name_uz`, `name_ru`, `slug`, `description_uz`, `description_ru`, `sku`, `price`, `discount_price`, `discount_expires`, `specifications`, `stock_quantity`, `status`, `featured`, `seo_title`, `seo_description`, `created`, `updated`, `image_id`, `is_device`, `rating`) VALUES
-(5, 1, '1', 'iPhone 15 Pro Max (Yangilangan)', 'iPhone 15 Pro Max (Обновленный)', 'iphone-15-pro-max-yangilangan', 'Apple kompaniyasining eng so\'nggi smartfoni - yangilangan versiya', 'Новейший смартфон компании Apple - обновленная версия', 'IPHONE-15-PRO-MAX-256', 14000000, 13500000, '2025-06-30 23:59:59', '\"{\\\"display\\\":\\\"6.7 inch OLED\\\",\\\"memory\\\":\\\"256GB\\\",\\\"ram\\\":\\\"8GB\\\",\\\"color\\\":\\\"Natural Titanium\\\"}\"', 100, 1, 1, 'iPhone 15 Pro Max arzon narxda', 'iPhone 15 Pro Max eng yaxshi narxda sotib oling', '2026-02-17 16:04:51', '2026-02-17 16:08:30', 17, 1, 5),
-(6, 1, '1', 'iPhone 18 Pro Max (Yangilangan)', 'iPhone 18 Pro Max (Обновленный)', 'iphone-18-pro-max-yangilangan', 'Apple kompaniyasining eng so\'nggi smartfoni - yangilangan versiya', 'Новейший смартфон компании Apple - обновленная версия', 'IPHONE-18-PRO-MAX-256', 14000000, 13500000, '2025-06-30 23:59:59', '\"{\\\"display\\\":\\\"6.7 inch OLED\\\",\\\"memory\\\":\\\"256GB\\\",\\\"ram\\\":\\\"8GB\\\",\\\"color\\\":\\\"Natural Titanium\\\"}\"', 100, 1, 1, 'iPhone 18 Pro Max arzon narxda', 'iPhone 18 Pro Max eng yaxshi narxda sotib oling', '2026-02-21 20:36:05', '2026-02-21 20:38:02', 17, 1, 5),
-(7, 1, '1', 'iPhone 16 Pro Max', 'iPhone 15 Pro Max', 'iphone-16-pro-max', 'Apple kompaniyasining eng so\'nggi smartfoni', 'Новейший смартфон компании Apple', '7374717637', 15000000, 14500000, '2024-12-31 23:59:59', '\"{\\\"fields\\\":[{\\\"display\\\":\\\"6.7 inch\\\",\\\"memory\\\":\\\"256GB\\\",\\\"ram\\\":\\\"8GB\\\",\\\"color\\\":\\\"Titanium Black\\\"}]}\"', 50, 1, 1, 'iPhone 15 Pro Max sotib olish', 'iPhone 15 Pro Max eng arzon narxda', '2026-02-21 21:01:01', '2026-02-21 21:01:01', 17, 1, 5);
+(5, 1, 1, 'iPhone 15 Pro Max (Yangilangan)', 'iPhone 15 Pro Max (Обновленный)', 'iphone-15-pro-max-yangilangan', 'Apple kompaniyasining eng so\'nggi smartfoni - yangilangan versiya', 'Новейший смартфон компании Apple - обновленная версия', 'IPHONE-15-PRO-MAX-256', 14000000, 13500000, '2025-06-30 23:59:59', '\"{\\\"display\\\":\\\"6.7 inch OLED\\\",\\\"memory\\\":\\\"256GB\\\",\\\"ram\\\":\\\"8GB\\\",\\\"color\\\":\\\"Natural Titanium\\\"}\"', 100, 1, 1, 'iPhone 15 Pro Max arzon narxda', 'iPhone 15 Pro Max eng yaxshi narxda sotib oling', '2026-02-17 16:04:51', '2026-02-17 16:08:30', 17, 1, 5),
+(6, 1, 1, 'iPhone 18 Pro Max (Yangilangan)', 'iPhone 18 Pro Max (Обновленный)', 'iphone-18-pro-max-yangilangan', 'Apple kompaniyasining eng so\'nggi smartfoni - yangilangan versiya', 'Новейший смартфон компании Apple - обновленная версия', 'IPHONE-18-PRO-MAX-256', 14000000, 13500000, '2025-06-30 23:59:59', '\"{\\\"display\\\":\\\"6.7 inch OLED\\\",\\\"memory\\\":\\\"256GB\\\",\\\"ram\\\":\\\"8GB\\\",\\\"color\\\":\\\"Natural Titanium\\\"}\"', 100, 1, 1, 'iPhone 18 Pro Max arzon narxda', 'iPhone 18 Pro Max eng yaxshi narxda sotib oling', '2026-02-21 20:36:05', '2026-02-21 20:38:02', 17, 1, 5),
+(7, 1, 1, 'iPhone 16 Pro Max', 'iPhone 15 Pro Max', 'iphone-16-pro-max', 'Apple kompaniyasining eng so\'nggi smartfoni', 'Новейший смартфон компании Apple', '7374717637', 15000000, 14500000, '2024-12-31 23:59:59', '\"{\\\"fields\\\":[{\\\"display\\\":\\\"6.7 inch\\\",\\\"memory\\\":\\\"256GB\\\",\\\"ram\\\":\\\"8GB\\\",\\\"color\\\":\\\"Titanium Black\\\"}]}\"', 50, 1, 1, 'iPhone 15 Pro Max sotib olish', 'iPhone 15 Pro Max eng arzon narxda', '2026-02-21 21:01:01', '2026-02-21 21:01:01', 17, 1, 5),
+(8, 1, 1, 'iPhone 16 Pro Max', 'iPhone 15 Pro Max', 'iphone-16-pro-max-2', 'Apple kompaniyasining eng so\'nggi smartfoni', 'Новейший смартфон компании Apple', '5068771413', 15000000, 14500000, '2024-12-31 23:59:59', NULL, 50, 1, 1, 'iPhone 15 Pro Max sotib olish', 'iPhone 15 Pro Max eng arzon narxda', '2026-02-24 23:44:06', '2026-02-24 23:44:06', 17, 1, 5),
+(9, 1, 1, 'iPhone 16 Pro Max', 'iPhone 15 Pro Max', 'iphone-16-pro-max-3', 'Apple kompaniyasining eng so\'nggi smartfoni', 'Новейший смартфон компании Apple', '5151898237', 15000000, 14500000, '2024-12-31 23:59:59', NULL, 50, 1, 1, 'iPhone 15 Pro Max sotib olish', 'iPhone 15 Pro Max eng arzon narxda', '2026-02-25 22:29:11', '2026-02-25 22:29:11', 17, 1, 5);
 
 -- --------------------------------------------------------
 
@@ -371,7 +432,11 @@ INSERT INTO `product_guides` (`id`, `product_id`, `has_video`, `title_uz`, `titl
 (7, 5, 0, 'Yangi qo\'llanma', 'Новое руководство', 'Bu yangi qo\'shilgan qo\'llanma', 'Это новое добавленное руководство', NULL, 3, 1, '2026-02-17 16:08:30', '2026-02-17 16:08:30', 'yangi-qollanma'),
 (8, 6, 1, 'Qutidan chiqarisasdasdasdah', 'Распаковка', 'Telefonni qutidan ehtiyotkorlik bilan chiqaring', 'Аккуратно извлеките телефон из коробки', 1, 1, 1, '2026-02-21 20:41:20', '2026-02-21 20:41:14', 'qutidan-chiqarisasdasdasdah'),
 (9, 7, 1, 'Qutidan chiqarish', 'Распаковка', 'Telefonni qutidan ehtiyotkorlik bilan chiqaring', 'Аккуратно извлеките телефон из коробки', 1, 1, 1, '2026-02-21 21:01:01', '2026-02-21 21:01:01', 'qutidan-chiqarish'),
-(10, 7, 0, 'Dastlabki sozlash', 'Первоначальная настройка', 'Telefonni yoqing va Apple ID bilan kiring', 'Включите телефон и войдите с Apple ID', NULL, 2, 1, '2026-02-21 21:01:01', '2026-02-21 21:01:01', 'dastlabki-sozlash-4');
+(10, 7, 0, 'Dastlabki sozlash', 'Первоначальная настройка', 'Telefonni yoqing va Apple ID bilan kiring', 'Включите телефон и войдите с Apple ID', NULL, 2, 1, '2026-02-21 21:01:01', '2026-02-21 21:01:01', 'dastlabki-sozlash-4'),
+(11, 8, 1, 'Qutidan chiqarish', 'Распаковка', 'Telefonni qutidan ehtiyotkorlik bilan chiqaring', 'Аккуратно извлеките телефон из коробки', 1, 1, 1, '2026-02-24 23:44:06', '2026-02-24 23:44:06', 'qutidan-chiqarish-4'),
+(12, 8, 0, 'Dastlabki sozlash', 'Первоначальная настройка', 'Telefonni yoqing va Apple ID bilan kiring', 'Включите телефон и войдите с Apple ID', NULL, 2, 1, '2026-02-24 23:44:06', '2026-02-24 23:44:06', 'dastlabki-sozlash-5'),
+(13, 9, 1, 'Qutidan chiqarish', 'Распаковка', 'Telefonni qutidan ehtiyotkorlik bilan chiqaring', 'Аккуратно извлеките телефон из коробки', 1, 1, 1, '2026-02-25 22:29:11', '2026-02-25 22:29:11', 'qutidan-chiqarish-5'),
+(14, 9, 0, 'Dastlabki sozlash', 'Первоначальная настройка', 'Telefonni yoqing va Apple ID bilan kiring', 'Включите телефон и войдите с Apple ID', NULL, 2, 1, '2026-02-25 22:29:11', '2026-02-25 22:29:11', 'dastlabki-sozlash-6');
 
 -- --------------------------------------------------------
 
@@ -405,7 +470,11 @@ INSERT INTO `product_image` (`id`, `product_id`, `image_id`, `alt_text`, `sort_o
 (7, 5, 18, 'Yangi rasm', 3, 0, '2026-02-17 16:08:30', '2026-02-17 16:08:30', 1),
 (8, 6, 17, 'iPhone 15 Pro Max yangi tomoni', 1, 1, '2026-02-21 20:42:41', '2026-02-21 20:46:04', 1),
 (9, 7, 17, 'iPhone 15 Pro Max old tomoni', 1, 1, '2026-02-21 21:01:01', '2026-02-21 21:01:01', 1),
-(10, 7, 16, 'iPhone 15 Pro Max orqa tomoni', 2, 0, '2026-02-21 21:01:01', '2026-02-21 21:01:01', 1);
+(10, 7, 16, 'iPhone 15 Pro Max orqa tomoni', 2, 0, '2026-02-21 21:01:01', '2026-02-21 21:01:01', 1),
+(11, 8, 17, 'iPhone 15 Pro Max old tomoni', 1, 1, '2026-02-24 23:44:06', '2026-02-24 23:44:06', 1),
+(12, 8, 16, 'iPhone 15 Pro Max orqa tomoni', 2, 0, '2026-02-24 23:44:06', '2026-02-24 23:44:06', 1),
+(13, 9, 17, 'iPhone 15 Pro Max old tomoni', 1, 1, '2026-02-25 22:29:11', '2026-02-25 22:29:11', 1),
+(14, 9, 16, 'iPhone 15 Pro Max orqa tomoni', 2, 0, '2026-02-25 22:29:11', '2026-02-25 22:29:11', 1);
 
 -- --------------------------------------------------------
 
@@ -437,7 +506,11 @@ INSERT INTO `product_soft` (`id`, `file_id`, `product_id`, `name`, `status`, `cr
 (7, 3, 5, 'Yangi dastur', 1, '2026-02-17 16:08:30', '2026-02-17 16:08:30'),
 (8, 2, 5, 'iPhone Driver v1.0', 1, '2026-02-21 20:46:59', '2026-02-21 20:47:40'),
 (9, 2, 7, 'iPhone Driver v1.0', 1, '2026-02-21 21:01:01', '2026-02-21 21:01:01'),
-(10, 1, 7, 'iTunes Setup', 1, '2026-02-21 21:01:01', '2026-02-21 21:01:01');
+(10, 1, 7, 'iTunes Setup', 1, '2026-02-21 21:01:01', '2026-02-21 21:01:01'),
+(11, 2, 8, 'iPhone Driver v1.0', 1, '2026-02-24 23:44:06', '2026-02-24 23:44:06'),
+(12, 1, 8, 'iTunes Setup', 1, '2026-02-24 23:44:06', '2026-02-24 23:44:06'),
+(13, 2, 9, 'iPhone Driver v1.0', 1, '2026-02-25 22:29:11', '2026-02-25 22:29:11'),
+(14, 1, 9, 'iTunes Setup', 1, '2026-02-25 22:29:11', '2026-02-25 22:29:11');
 
 -- --------------------------------------------------------
 
@@ -486,7 +559,8 @@ CREATE TABLE `user` (
   `is_verified` int(11) DEFAULT 0,
   `status` int(11) DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),
-  `updated` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `settings` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`settings`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -553,6 +627,13 @@ ALTER TABLE `admin_role`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `article`
+--
+ALTER TABLE `article`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `FK_article_navigation_id` (`navigation_id`);
+
+--
 -- Indexes for table `brand`
 --
 ALTER TABLE `brand`
@@ -578,6 +659,14 @@ ALTER TABLE `category`
 --
 ALTER TABLE `files`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `navigation`
+--
+ALTER TABLE `navigation`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `FK_navigation_image_id` (`image_id`),
+  ADD KEY `FK_navigation_parent_id` (`parent_id`);
 
 --
 -- Indexes for table `orders`
@@ -716,6 +805,12 @@ ALTER TABLE `admin_role`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT for table `article`
+--
+ALTER TABLE `article`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
 -- AUTO_INCREMENT for table `brand`
 --
 ALTER TABLE `brand`
@@ -738,6 +833,12 @@ ALTER TABLE `category`
 --
 ALTER TABLE `files`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+
+--
+-- AUTO_INCREMENT for table `navigation`
+--
+ALTER TABLE `navigation`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `orders`
@@ -779,25 +880,25 @@ ALTER TABLE `payment_method`
 -- AUTO_INCREMENT for table `product`
 --
 ALTER TABLE `product`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `product_guides`
 --
 ALTER TABLE `product_guides`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `product_image`
 --
 ALTER TABLE `product_image`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `product_soft`
 --
 ALTER TABLE `product_soft`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `rating`
@@ -846,6 +947,12 @@ ALTER TABLE `admin`
   ADD CONSTRAINT `FK_admin_role_id` FOREIGN KEY (`role_id`) REFERENCES `admin_role` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 --
+-- Constraints for table `article`
+--
+ALTER TABLE `article`
+  ADD CONSTRAINT `FK_article_navigation_id` FOREIGN KEY (`navigation_id`) REFERENCES `navigation` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+--
 -- Constraints for table `brand`
 --
 ALTER TABLE `brand`
@@ -856,6 +963,13 @@ ALTER TABLE `brand`
 --
 ALTER TABLE `category`
   ADD CONSTRAINT `FK_category_image_id` FOREIGN KEY (`image_id`) REFERENCES `files` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+--
+-- Constraints for table `navigation`
+--
+ALTER TABLE `navigation`
+  ADD CONSTRAINT `FK_navigation_image_id` FOREIGN KEY (`image_id`) REFERENCES `files` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  ADD CONSTRAINT `FK_navigation_parent_id` FOREIGN KEY (`parent_id`) REFERENCES `navigation` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 --
 -- Constraints for table `orders`
